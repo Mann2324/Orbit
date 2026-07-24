@@ -1,0 +1,12 @@
+import * as THREE from 'three';
+export function createSunEffects(sun){
+ const group=new THREE.Group();sun.add(group);
+ function radial(stops){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d'),g=x.createRadialGradient(256,256,0,256,256,256);stops.forEach(s=>g.addColorStop(s[0],s[1]));x.fillStyle=g;x.fillRect(0,0,512,512);return new THREE.CanvasTexture(c)}
+ const coronaMap=radial([[0,'rgba(255,255,220,.95)'],[.12,'rgba(255,205,80,.75)'],[.38,'rgba(255,105,20,.22)'],[1,'rgba(255,70,0,0)']]);
+ const corona=new THREE.Sprite(new THREE.SpriteMaterial({map:coronaMap,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));corona.scale.set(48,48,1);group.add(corona);
+ const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:coronaMap,transparent:true,opacity:.28,blending:THREE.AdditiveBlending,depthWrite:false}));halo.scale.set(72,72,1);group.add(halo);
+ const flareMat=new THREE.MeshBasicMaterial({color:0xff7b1a,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+ const flares=[];for(let i=0;i<7;i++){const r=7.1,a=i/7*Math.PI*2;const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(Math.cos(a)*r,Math.sin(a)*r,0),new THREE.Vector3(Math.cos(a+.16)*r*1.45,Math.sin(a+.16)*r*1.45,(i%2-.5)*2),new THREE.Vector3(Math.cos(a+.35)*r*1.08,Math.sin(a+.35)*r*1.08,0)]);const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,32,.07+Math.random()*.08,6,false),flareMat.clone());tube.userData.phase=Math.random()*6.28;group.add(tube);flares.push(tube)}
+ const particles=[];const pg=new THREE.BufferGeometry(),arr=[];for(let i=0;i<420;i++){const a=Math.random()*Math.PI*2,z=Math.random()*2-1,q=Math.sqrt(1-z*z),r=7.2+Math.random()*3.5;arr.push(r*q*Math.cos(a),r*z,r*q*Math.sin(a))}pg.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));const plasma=new THREE.Points(pg,new THREE.PointsMaterial({color:0xffb13b,size:.12,transparent:true,opacity:.55,blending:THREE.AdditiveBlending,depthWrite:false}));group.add(plasma);particles.push(plasma);
+ return{update(t){const s=t*.001;corona.material.opacity=.72+Math.sin(s*2.1)*.1;corona.scale.setScalar(47+Math.sin(s*1.7)*2);halo.rotation.z=s*.015;halo.material.opacity=.22+Math.sin(s*.8)*.05;flares.forEach((f,i)=>{f.material.opacity=.22+.3*(.5+.5*Math.sin(s*(1.1+i*.09)+f.userData.phase));f.scale.setScalar(.9+.18*Math.sin(s*.7+f.userData.phase))});plasma.rotation.y=s*.035;plasma.rotation.x=Math.sin(s*.08)*.1}};
+}
